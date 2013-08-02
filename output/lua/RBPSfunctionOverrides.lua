@@ -254,75 +254,16 @@ function ConstructMixin:SetConstructionComplete(builder)
     end
     
 end
-function ConstructMixin:Construct(elapsedTime, builder)
-
-    local success = false
-    local playAV = false
-    
-    if not self.constructionComplete then
-        
-        if builder and builder.OnConstructTarget then
-            builder:OnConstructTarget(self)
-        end
-        
-        if Server then
-
-            local startBuildFraction = self.buildFraction
-            local newBuildTime = self.buildTime + elapsedTime
-            local timeToComplete = self:GetTotalConstructionTime()
-            
-            if newBuildTime >= timeToComplete then
-            
-                self:SetConstructionComplete(builder)
-                
-                // Give points for building structures
-                if self:GetIsBuilt() and not self:isa("Hydra") and builder and HasMixin(builder, "Scoring") then                
-                    builder:AddScore(kBuildPointValue)
-                end
-                
-            else
-            
-                if self.buildTime <= self.timeOfNextBuildWeldEffects and newBuildTime >= self.timeOfNextBuildWeldEffects then
-                
-                    playAV = true
-                    self.timeOfNextBuildWeldEffects = newBuildTime + kBuildEffectsInterval
-                    
-                end
-                
-                self.buildTime = newBuildTime
-                self.buildFraction = math.max(math.min((self.buildTime / timeToComplete), 1), 0)
-                
-                local scalar = self.buildFraction - startBuildFraction
-                AddBuildHealth(self, scalar)
-                AddBuildArmor(self, scalar)
-                
-                if self.oldBuildFraction ~= self.buildFraction then
-                
-                    if self.OnConstruct then
-                        self:OnConstruct(builder, self.buildFraction)
-                    end
-                    
-                    self.oldBuildFraction = self.buildFraction
-                    
-                end
-                
-            end
-        
+local OldConstruct = ConstructMixin:Construct
+function ConstructMixin:Construct(elapsedTime, builder)      
                     //MODIFY START
                     local client = Server.GetOwner(builder)
                     if client then
                         RBPS:addConstructionTime(client)            
                     end
-                    //MODIFY END
-
-         end
+                    //MODIFY END 
+   return OldConstruct(elapsedTime, builder)
         
-        success = true
-        
-    end
-    
-    return success, playAV
-    
 end
 
 
